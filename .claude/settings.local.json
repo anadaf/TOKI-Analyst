@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash /Users/a.nadaf/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.1/skills/brainstorming/scripts/start-server.sh --project-dir \"/Users/a.nadaf/Desktop/app/AI Data Analyst\")",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
