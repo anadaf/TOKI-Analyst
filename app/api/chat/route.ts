@@ -47,13 +47,30 @@ Available block types:
 3. bar_chart: { type: "bar_chart", title: "Chart Title", description: "brief description", data: [{name: "label", value: number}, ...], dataKey: "value", xKey: "name", colors: ["#1CC5C8",...] }
 4. line_chart: { type: "line_chart", title: "Chart Title", description: "brief description", data: [{name: "label", value: number}, ...], dataKey: "value", xKey: "name" }
 5. pie_chart: { type: "pie_chart", title: "Chart Title", description: "brief description", data: [{name: "label", value: number}, ...] }
+6. radar_chart: { type: "radar_chart", title, description, data: [{axis: "Algebra", value: 72}, ...], axisKey: "axis", dataKey: "value" }
+   - Multi-series variant: data: [{axis: "Algebra", group_a: 72, group_b: 85}, ...], axisKey: "axis", series: [{key: "group_a", label: "Below", color: "#EF4444"}, {key: "group_b", label: "On level", color: "#1CC5C8"}]
+7. scatter_chart: { type: "scatter_chart", title, description, data: [{x: 320, y: 78, label: "3329946"}, ...], xKey: "x", yKey: "y", labelKey: "label", xLabel: "Time on task (s)", yLabel: "Score (%)" }
+8. stacked_bar_chart: { type: "stacked_bar_chart", title, description, data: [{name: "Lesson A", completed: 22, in_progress: 6, not_started: 4}, ...], xKey: "name", series: [{key: "completed", label: "Completed", color: "#1CC5C8"}, ...] }
+9. grouped_bar_chart: same shape as stacked_bar_chart — bars sit side-by-side instead of stacking
+10. heatmap: { type: "heatmap", title, description, xAxis: ["Lesson 1", ...], yAxis: ["3329946", ...], cells: [{x: 0, y: 0, value: 78}, ...], valueRange: [0,100], colorScale: ["#EF4444","#F59E0B","#1CC5C8"] }
+11. boxplot: { type: "boxplot", title, description, data: [{name: "Lesson A", min: 45, q1: 60, median: 72, q3: 85, max: 95, outliers: [30]}, ...] }
+12. area_chart: { type: "area_chart", title, description, data, xKey, series?: [...] or dataKey: "value" } — use for cumulative or multi-series time trends
+13. gauge: { type: "gauge", title, description, value: 78, max: 100, unit: "%" } — use for a single headline KPI
+
+CHART SELECTION GUIDE:
+- Radar: comparing 3+ dimensions across 1–2 entities (e.g., class strengths across skill categories; student vs class avg across subjects)
+- Scatter: correlation / outlier discovery between two numeric variables (e.g., time-on-task vs score, ADT vs current score)
+- Stacked bar: part-to-whole across categories (completion status per lesson)
+- Grouped bar: side-by-side comparison (this week vs last week per student/lesson)
+- Boxplot: distribution per group when median/spread/outliers matter more than the mean
+- Heatmap: two-dimensional density, especially students × lessons (or dates)
+- Area: cumulative totals over time (e.g., cumulative lessons completed)
+- Gauge: single-number KPIs worth highlighting (class average, overall completion)
 
 RULES:
 - Always start with a text block providing context or summary
 - Use tables when showing student lists or detailed comparisons (max 15 rows for readability)
-- Use bar charts for comparisons across categories (e.g., scores by topic, students by proficiency)
-- Use line charts for trends over time
-- Use pie charts for distributions (e.g., proficiency breakdown, completion rates)
+- Pick the chart that best fits the question per the CHART SELECTION GUIDE above — don't default to bar for everything
 - Include 2-3 blocks maximum per response — be focused
 - For scores, numbers in table rows should be raw numbers (e.g., 75 not "75%") — the UI handles formatting
 - Column headers should be clear and concise (e.g., "Student ID", "Avg Score", "Completed")
