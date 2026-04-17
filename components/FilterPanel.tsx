@@ -64,28 +64,13 @@ export default function FilterPanel({ open, onClose, anchorRef, metadata, value,
     }
   }, [open, value, anchorRef]);
 
-  // Close on outside click (mousedown + touchstart) / Escape
+  // Close on Escape key
   useEffect(() => {
     if (!open) return;
-    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      const target = (e instanceof TouchEvent ? e.touches[0]?.target : e.target) as Node | null;
-      if (!target) return;
-      if (panelRef.current?.contains(target)) return;
-      if (anchorRef.current?.contains(target)) return;
-      onClose();
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("mousedown", handlePointerDown as EventListener);
-    document.addEventListener("touchstart", handlePointerDown as EventListener, { passive: true });
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown as EventListener);
-      document.removeEventListener("touchstart", handlePointerDown as EventListener);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [open, onClose, anchorRef]);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open, onClose]);
 
   if (!open || typeof document === "undefined") return null;
 
@@ -337,7 +322,16 @@ export default function FilterPanel({ open, onClose, anchorRef, metadata, value,
     </div>
   );
 
-  return createPortal(panel, document.body);
+  return createPortal(
+    <>
+      <div
+        style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+        onPointerDown={onClose}
+      />
+      {panel}
+    </>,
+    document.body
+  );
 }
 
 /* ── Section header ── */
@@ -386,8 +380,15 @@ function LinkBtn({ onClick, children }: { onClick: () => void; children: React.R
 
 /* ── Checkbox row ── */
 function CheckRow({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
+  const [hover, setHover] = useState(false);
   return (
-    <label
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={onToggle}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
         display: "flex",
         alignItems: "center",
@@ -397,9 +398,12 @@ function CheckRow({ label, checked, onToggle }: { label: string; checked: boolea
         fontSize: 11.5,
         color: TEXT,
         transition: "background 0.12s",
+        background: hover ? "#F2F4F7" : "transparent",
+        width: "100%",
+        border: "none",
+        textAlign: "left",
+        fontFamily: "inherit",
       }}
-      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#F2F4F7")}
-      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
     >
       <span
         style={{
@@ -421,12 +425,6 @@ function CheckRow({ label, checked, onToggle }: { label: string; checked: boolea
           </svg>
         )}
       </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onToggle}
-        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
-      />
       <span
         style={{
           overflow: "hidden",
@@ -437,6 +435,6 @@ function CheckRow({ label, checked, onToggle }: { label: string; checked: boolea
       >
         {label}
       </span>
-    </label>
+    </button>
   );
 }

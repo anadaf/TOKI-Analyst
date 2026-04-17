@@ -143,6 +143,12 @@ export async function POST(req: NextRequest) {
     const result = await chat.sendMessage(messageParts);
     const text = result.response.text().trim();
 
+    if (!text) {
+      return NextResponse.json({
+        blocks: [{ type: "text", content: "I wasn't able to generate a response for that question. Please try rephrasing or ask a more specific question about the class data." }],
+      });
+    }
+
     // Parse JSON response
     let parsed;
     try {
@@ -152,6 +158,10 @@ export async function POST(req: NextRequest) {
     } catch {
       // Fallback: return as text block
       parsed = { blocks: [{ type: "text", content: text }] };
+    }
+
+    if (!parsed?.blocks || !Array.isArray(parsed.blocks) || parsed.blocks.length === 0) {
+      parsed = { blocks: [{ type: "text", content: text || "No response generated." }] };
     }
 
     return NextResponse.json(parsed);

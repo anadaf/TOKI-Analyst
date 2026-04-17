@@ -113,13 +113,43 @@ function ProfBadge({ val }: { val: string }) {
   );
 }
 
+/* ── Inline markdown helpers ── */
+function parseInline(text: string): React.ReactNode[] {
+  const result: React.ReactNode[] = [];
+  const re = /(\*\*(.+?)\*\*)|(\*(.+?)\*)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) result.push(text.slice(last, m.index));
+    if (m[1]) result.push(<strong key={m.index} style={{ fontWeight: 700, color: "var(--text-dark, #1A2537)" }}>{m[2]}</strong>);
+    else if (m[3]) result.push(<em key={m.index}>{m[4]}</em>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) result.push(text.slice(last));
+  return result;
+}
+
+function renderMarkdown(text: string): React.ReactNode {
+  return text.split("\n").map((line, i) => {
+    const isBullet = /^[-•]\s/.test(line);
+    const body = isBullet ? line.replace(/^[-•]\s/, "") : line;
+    const parts = parseInline(body);
+    return (
+      <span key={i} style={{ display: isBullet ? "flex" : "block", gap: isBullet ? 6 : 0, marginBottom: isBullet ? 2 : 0 }}>
+        {isBullet && <span style={{ color: "#1CC5C8", flexShrink: 0 }}>•</span>}
+        <span>{parts}</span>
+      </span>
+    );
+  });
+}
+
 /* ── Text block ── */
 function TextBlock({ content }: { content: string }) {
   return (
     <div className="rounded-2xl rounded-tl-sm px-4 py-3.5 ai-msg" style={CARD_STYLE}>
-      <p className="text-sm leading-relaxed" style={{ color: "var(--text-mid)", whiteSpace: "pre-wrap" }}>
-        {content}
-      </p>
+      <div className="text-sm leading-relaxed" style={{ color: "var(--text-mid)" }}>
+        {renderMarkdown(content)}
+      </div>
     </div>
   );
 }
