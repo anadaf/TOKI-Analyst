@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import TopNav from "@/components/TopNav";
 import { ChatMessageBubble, TypingBubble, Message, ResponseBlock } from "@/components/ChatMessage";
 import FilterPanel, { FilterValue, FilterMetadata } from "@/components/FilterPanel";
+import SettingsPanel, { AISettings, DEFAULT_SETTINGS } from "@/components/SettingsPanel";
 
 const SUGGESTIONS = [
   "Which students are struggling the most?",
@@ -54,6 +55,11 @@ export default function HomePage() {
   const [filters, setFilters] = useState<FilterValue>({});
   const [filterOpen, setFilterOpen] = useState(false);
 
+  // Settings state
+  const [settings, setSettings] = useState<AISettings>(DEFAULT_SETTINGS);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,7 +104,19 @@ export default function HomePage() {
     } catch {
       // ignore
     }
+    try {
+      const saved = localStorage.getItem("toki-settings");
+      if (saved) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(saved) });
+    } catch {
+      // ignore
+    }
   }, []);
+
+  /* ── Persist settings ── */
+  const handleSettingsChange = (v: AISettings) => {
+    setSettings(v);
+    try { localStorage.setItem("toki-settings", JSON.stringify(v)); } catch {}
+  };
 
   /* ── Persist conversation ── */
   useEffect(() => {
@@ -438,6 +456,7 @@ export default function HomePage() {
           })),
           customCsv: activeCsv || undefined,
           filters: activeFilterCount > 0 ? filters : undefined,
+          settings,
         }),
       });
       const data = await res.json();
@@ -568,14 +587,33 @@ export default function HomePage() {
             </div>
 
             {/* Settings icon */}
-            <button
-              className="flex items-center justify-center rounded-xl transition-colors"
-              style={{ width: 36, height: 36, background: "#F2F4F7", border: "1px solid #E3E8EF", color: "#8896AB" }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14" />
-              </svg>
-            </button>
+            <div style={{ position: "relative" }}>
+              <button
+                ref={settingsBtnRef}
+                onClick={() => setSettingsOpen((v) => !v)}
+                title="AI settings (language, detail level)"
+                className="flex items-center justify-center rounded-xl transition-colors"
+                style={{
+                  width: 36, height: 36,
+                  background: settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#E6F9F9" : "#F2F4F7",
+                  border: `1px solid ${settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#1CC5C8" : "#E3E8EF"}`,
+                  color: settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#0b8e91" : "#8896AB",
+                  cursor: "pointer",
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
+              <SettingsPanel
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                anchorRef={settingsBtnRef}
+                value={settings}
+                onChange={handleSettingsChange}
+              />
+            </div>
 
             {/* Clear conversation — only when messages exist */}
             {!isEmpty && (

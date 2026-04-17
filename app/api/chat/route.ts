@@ -84,12 +84,13 @@ Respond ONLY with valid JSON. No markdown, no explanation outside the JSON.`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, history, attachments, customCsv, filters } = await req.json() as {
+    const { message, history, attachments, customCsv, filters, settings } = await req.json() as {
       message: string;
       history?: { role: string; content: string }[];
       attachments?: Array<{ mimeType: string; data: string }>;
       customCsv?: string;
       filters?: CsvFilters;
+      settings?: { language?: string; detail?: string };
     };
 
     // Pick source CSV (uploaded > default), then apply filters
@@ -118,10 +119,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Build per-request system instruction with teacher's settings
+    const langInstruction = settings?.language === "Arabic"
+      ? "\n\nOUTPUT LANGUAGE: Respond entirely in Arabic (العربية). All text blocks, chart titles, table headers, and descriptions must be in Arabic."
+      : "\n\nOUTPUT LANGUAGE: Respond in English.";
+
+    const detailInstruction = settings?.detail === "Brief"
+      ? "\n\nLEVEL OF DETAIL: Be concise. Give only the key insight in 1–3 sentences. Prefer a single block. Skip lengthy explanations."
+      : settings?.detail === "Detailed"
+      ? "\n\nLEVEL OF DETAIL: Be thorough. Provide full analysis with context, reasoning, caveats, and actionable recommendations. Use 3–4 blocks when helpful."
+      : "\n\nLEVEL OF DETAIL: Use standard detail — balanced explanation, 2–3 blocks, clear but not exhaustive.";
+
+    const effectiveSystemPrompt = SYSTEM_PROMPT + langInstruction + detailInstruction;
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: effectiveSystemPrompt,
       generationConfig: {
         responseMimeType: "application/json",
       },
