@@ -39,7 +39,11 @@ const SYSTEM_PROMPT = `You are TOKI, an AI Data Analyst assistant built by Alef 
 You have been given a CSV dataset of student learning activity data. Your role is to analyze it and answer the teacher's questions clearly and helpfully.
 
 RESPONSE FORMAT:
-You MUST respond with a valid JSON object containing a "blocks" array. Each block has a "type" field and type-specific data.
+You MUST respond with a valid JSON OBJECT (not an array) with exactly this shape: { "blocks": [ ...block objects... ] }
+The top-level value MUST be an object with a "blocks" key. Do NOT return a bare array. Do NOT wrap the response in markdown. Each block has a "type" field and type-specific data.
+
+Example of the correct shape:
+{ "blocks": [ { "type": "text", "content": "..." }, { "type": "bar_chart", "title": "...", "data": [...], "dataKey": "value", "xKey": "name" } ] }
 
 Available block types:
 1. text: { type: "text", content: "string with your explanation or insight" }
@@ -187,11 +191,26 @@ export async function POST(req: NextRequest) {
       const clean = text.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
       parsed = JSON.parse(clean);
     } catch {
-      // Fallback: return as text block
-      parsed = { blocks: [{ type: "text", content: text }] };
+      parsed = null;
     }
 
-    if (!parsed?.blocks || !Array.isArray(parsed.blocks) || parsed.blocks.length === 0) {
+    // Accept either { blocks: [...] } or a bare [...] array of blocks
+    if (Array.isArray(parsed)) {
+      parsed = { blocks: parsed };
+    } else if (parsed && typeof parsed === "object" && !parsed.blocks) {
+      // Single block object { type: "...", ... } — wrap it
+      if (typeof parsed.type === "string") {
+        parsed = { blocks: [parsed] };
+      }
+    }
+
+    const hasValidBlocks =
+      parsed?.blocks &&
+      Array.isArray(parsed.blocks) &&
+      parsed.blocks.length > 0 &&
+      parsed.blocks.every((b: unknown) => b && typeof b === "object" && typeof (b as { type?: unknown }).type === "string");
+
+    if (!hasValidBlocks) {
       parsed = { blocks: [{ type: "text", content: text || "No response generated." }] };
     }
 
