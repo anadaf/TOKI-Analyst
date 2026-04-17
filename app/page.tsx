@@ -536,16 +536,6 @@ export default function HomePage() {
           </h1>
 
           <div className="flex items-center gap-2">
-            {/* Search */}
-            <div
-              className="flex items-center gap-2 px-3 rounded-xl"
-              style={{ height: 36, background: "#F2F4F7", border: "1px solid #E3E8EF", width: 180 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8896AB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <span className="text-sm" style={{ color: "#B0BAC9", fontFamily: "DM Sans, sans-serif" }}>Search...</span>
-            </div>
 
             {/* Filter icon with dynamic badge + panel */}
             <div style={{ position: "relative" }}>
