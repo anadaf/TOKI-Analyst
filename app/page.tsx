@@ -512,135 +512,107 @@ export default function HomePage() {
           transition: "left 0.2s",
         }}
       >
-        {/* Title bar */}
+        {/* Control bar: filter/settings/clear + optional CSV & filter pills */}
         <div
-          className="flex items-center justify-between flex-shrink-0"
+          className="flex-shrink-0 flex items-center flex-wrap gap-2"
           style={{
-            height: 60,
-            background: "white",
-            borderBottom: "1px solid #E8ECF0",
-            paddingLeft: 28,
-            paddingRight: 20,
+            padding: "8px 28px",
+            background: "transparent",
+            justifyContent: "flex-end",
           }}
         >
-          <h1
-            style={{
-              fontFamily: "DM Sans, sans-serif",
-              fontWeight: 700,
-              fontSize: 20,
-              color: "#1A2537",
-              letterSpacing: "-0.3px",
-            }}
-          >
-            TOKI Analyst
-          </h1>
+          {/* Filter icon with dynamic badge + panel */}
+          <div style={{ position: "relative" }}>
+            <button
+              ref={filterBtnRef}
+              onClick={() => setFilterOpen((v) => !v)}
+              title="Scope AI conversation by date, student, or lesson"
+              className="relative flex items-center justify-center rounded-xl transition-all"
+              style={{
+                width: 32,
+                height: 32,
+                background: filterOpen || activeFilterCount > 0 ? "#E6F9F9" : "#F2F4F7",
+                border: `1px solid ${filterOpen || activeFilterCount > 0 ? "#1CC5C8" : "#E3E8EF"}`,
+                color: filterOpen || activeFilterCount > 0 ? "#0b8e91" : "#8896AB",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              {activeFilterCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
+                  style={{ width: 16, height: 16, background: "#1CC5C8", fontSize: 9, fontFamily: "Outfit, sans-serif" }}
+                >
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
 
-          <div className="flex items-center gap-2">
-
-            {/* Filter icon with dynamic badge + panel */}
-            <div style={{ position: "relative" }}>
-              <button
-                ref={filterBtnRef}
-                onClick={() => setFilterOpen((v) => !v)}
-                title="Scope AI conversation by date, student, or lesson"
-                className="relative flex items-center justify-center rounded-xl transition-all"
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: filterOpen || activeFilterCount > 0 ? "#E6F9F9" : "#F2F4F7",
-                  border: `1px solid ${filterOpen || activeFilterCount > 0 ? "#1CC5C8" : "#E3E8EF"}`,
-                  color: filterOpen || activeFilterCount > 0 ? "#0b8e91" : "#8896AB",
-                  cursor: "pointer",
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                </svg>
-                {activeFilterCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
-                    style={{ width: 16, height: 16, background: "#1CC5C8", fontSize: 9, fontFamily: "Outfit, sans-serif" }}
-                  >
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
-
-              <FilterPanel
-                open={filterOpen}
-                onClose={() => setFilterOpen(false)}
-                anchorRef={filterBtnRef}
-                metadata={metadata}
-                value={filters}
-                onApply={setFilters}
-              />
-            </div>
-
-            {/* Settings icon */}
-            <div style={{ position: "relative" }}>
-              <button
-                ref={settingsBtnRef}
-                onClick={() => setSettingsOpen((v) => !v)}
-                title="AI settings (language, detail level)"
-                className="flex items-center justify-center rounded-xl transition-colors"
-                style={{
-                  width: 36, height: 36,
-                  background: settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#E6F9F9" : "#F2F4F7",
-                  border: `1px solid ${settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#1CC5C8" : "#E3E8EF"}`,
-                  color: settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#0b8e91" : "#8896AB",
-                  cursor: "pointer",
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              </button>
-              <SettingsPanel
-                open={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
-                anchorRef={settingsBtnRef}
-                value={settings}
-                onChange={handleSettingsChange}
-              />
-            </div>
-
-            {/* Clear conversation — only when messages exist */}
-            {!isEmpty && (
-              <button
-                onClick={clearChat}
-                title="Clear conversation"
-                className="flex items-center justify-center rounded-xl transition-all"
-                style={{ width: 36, height: 36, background: "#FEF2F2", border: "1px solid #FECACA", color: "#EF4444" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "#EF4444";
-                  (e.currentTarget as HTMLElement).style.color = "white";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "#FEF2F2";
-                  (e.currentTarget as HTMLElement).style.color = "#EF4444";
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="1 4 1 10 7 10" />
-                  <path d="M3.51 15a9 9 0 1 0 .49-4.89" />
-                </svg>
-              </button>
-            )}
+            <FilterPanel
+              open={filterOpen}
+              onClose={() => setFilterOpen(false)}
+              anchorRef={filterBtnRef}
+              metadata={metadata}
+              value={filters}
+              onApply={setFilters}
+            />
           </div>
-        </div>
 
-        {/* CSV + filter status bar */}
-        {(activeCsvName || activeFilterCount > 0 || csvError) && (
-          <div
-            className="flex-shrink-0 flex items-center flex-wrap gap-2"
-            style={{
-              padding: "8px 28px",
-              background: "white",
-              borderBottom: "1px solid #E8ECF0",
-            }}
-          >
-            {/* CSV chip */}
+          {/* Settings icon */}
+          <div style={{ position: "relative" }}>
+            <button
+              ref={settingsBtnRef}
+              onClick={() => setSettingsOpen((v) => !v)}
+              title="AI settings (language, detail level)"
+              className="flex items-center justify-center rounded-xl transition-colors"
+              style={{
+                width: 32, height: 32,
+                background: settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#E6F9F9" : "#F2F4F7",
+                border: `1px solid ${settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#1CC5C8" : "#E3E8EF"}`,
+                color: settingsOpen || settings.language !== "English" || settings.detail !== "Standard" ? "#0b8e91" : "#8896AB",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+            <SettingsPanel
+              open={settingsOpen}
+              onClose={() => setSettingsOpen(false)}
+              anchorRef={settingsBtnRef}
+              value={settings}
+              onChange={handleSettingsChange}
+            />
+          </div>
+
+          {/* Clear conversation — only when messages exist */}
+          {!isEmpty && (
+            <button
+              onClick={clearChat}
+              title="Clear conversation"
+              className="flex items-center justify-center rounded-xl transition-all"
+              style={{ width: 32, height: 32, background: "#FEF2F2", border: "1px solid #FECACA", color: "#EF4444" }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "#EF4444";
+                (e.currentTarget as HTMLElement).style.color = "white";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "#FEF2F2";
+                (e.currentTarget as HTMLElement).style.color = "#EF4444";
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 .49-4.89" />
+              </svg>
+            </button>
+          )}
+
+          {/* CSV chip */}
             {activeCsvName && (
               <div
                 className="flex items-center gap-2 rounded-full"
@@ -711,8 +683,7 @@ export default function HomePage() {
                 {csvError}
               </span>
             )}
-          </div>
-        )}
+        </div>
 
         {/* Chat area */}
         <div className="flex flex-col flex-1 overflow-hidden" style={{ background: "#F2F4F7" }}>
