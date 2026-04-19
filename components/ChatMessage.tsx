@@ -82,6 +82,7 @@ export interface Message {
   blocks?: ResponseBlock[];
   text?: string;
   timestamp: Date;
+  streaming?: boolean;
   attachments?: Array<{ name: string; mimeType: string; preview?: string }>;
 }
 
@@ -169,13 +170,50 @@ function ProfBadge({ val }: { val: string }) {
 /* ── Inline markdown helpers ── */
 function parseInline(text: string): React.ReactNode[] {
   const result: React.ReactNode[] = [];
-  const re = /(\*\*(.+?)\*\*)|(\*(.+?)\*)/g;
-  let last = 0;
+  // Match ==highlight==, **bold**, *italic*, and bare percentages like 78%
+  const re = /(==(.+?)==)|(\*\*(.+?)\*\*)|(\*(.+?)\*)|\b(\d+(?:\.\d+)?%)/g;
+  let last = 0, key = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) result.push(text.slice(last, m.index));
-    if (m[1]) result.push(<strong key={m.index} style={{ fontWeight: 700, color: "var(--text-dark, #1A2537)" }}>{m[2]}</strong>);
-    else if (m[3]) result.push(<em key={m.index}>{m[4]}</em>);
+    if (m[1]) {
+      // ==highlight== → amber chip
+      result.push(
+        <mark key={key++} style={{
+          background: "#FEF3C7",
+          color: "#92400E",
+          padding: "1px 5px",
+          borderRadius: 4,
+          fontWeight: 600,
+          fontSize: "0.95em",
+          fontStyle: "normal",
+        }}>
+          {m[2]}
+        </mark>
+      );
+    } else if (m[3]) {
+      // **bold** → teal chip
+      result.push(
+        <strong key={key++} style={{
+          fontWeight: 700,
+          color: "#0a7f82",
+          background: "rgba(28,197,200,0.10)",
+          padding: "1px 5px",
+          borderRadius: 4,
+          fontSize: "0.95em",
+        }}>
+          {m[4]}
+        </strong>
+      );
+    } else if (m[5]) {
+      // *italic*
+      result.push(<em key={key++} style={{ color: "#64748b", fontStyle: "italic" }}>{m[6]}</em>);
+    } else if (m[7]) {
+      // bare percentage — teal bold
+      result.push(
+        <span key={key++} style={{ fontWeight: 700, color: "#1CC5C8" }}>{m[7]}</span>
+      );
+    }
     last = m.index + m[0].length;
   }
   if (last < text.length) result.push(text.slice(last));
@@ -184,12 +222,33 @@ function parseInline(text: string): React.ReactNode[] {
 
 function renderMarkdown(text: string): React.ReactNode {
   return text.split("\n").map((line, i) => {
+    const isNumbered = /^\d+\.\s/.test(line);
     const isBullet = /^[-•]\s/.test(line);
-    const body = isBullet ? line.replace(/^[-•]\s/, "") : line;
+    const body = isNumbered
+      ? line.replace(/^\d+\.\s/, "")
+      : isBullet
+      ? line.replace(/^[-•]\s/, "")
+      : line;
     const parts = parseInline(body);
+    const prefix = isNumbered ? line.match(/^(\d+\.)\s/)?.[1] : null;
     return (
-      <span key={i} style={{ display: isBullet ? "flex" : "block", gap: isBullet ? 6 : 0, marginBottom: isBullet ? 2 : 0 }}>
-        {isBullet && <span style={{ color: "#1CC5C8", flexShrink: 0 }}>•</span>}
+      <span
+        key={i}
+        style={{
+          display: isBullet || isNumbered ? "flex" : "block",
+          gap: 6,
+          marginBottom: isBullet || isNumbered ? 3 : 0,
+          alignItems: "flex-start",
+        }}
+      >
+        {isBullet && (
+          <span style={{ color: "#1CC5C8", flexShrink: 0, fontWeight: 700, marginTop: 1 }}>•</span>
+        )}
+        {isNumbered && (
+          <span style={{ color: "#1CC5C8", flexShrink: 0, fontWeight: 700, minWidth: 18, marginTop: 1 }}>
+            {prefix}
+          </span>
+        )}
         <span>{parts}</span>
       </span>
     );
@@ -197,11 +256,12 @@ function renderMarkdown(text: string): React.ReactNode {
 }
 
 /* ── Text block ── */
-function TextBlock({ content }: { content: string }) {
+function TextBlock({ content, streaming }: { content: string; streaming?: boolean }) {
   return (
     <div className="rounded-2xl rounded-tl-sm px-4 py-3.5 ai-msg" style={CARD_STYLE}>
       <div className="text-sm leading-relaxed" style={{ color: "var(--text-mid)" }}>
-        {renderMarkdown(content)}
+        {content ? renderMarkdown(content) : null}
+        {streaming && <span className="streaming-cursor" />}
       </div>
     </div>
   );
@@ -1034,8 +1094,8 @@ export function ChatMessageBubble({ message }: { message: Message }) {
       <AiAvatar />
       <div className="flex-1 flex flex-col gap-2.5" style={{ maxWidth: "calc(100% - 44px)" }}>
         {message.blocks?.map((block, i) => {
-          if (block.type === "text" && block.content)
-            return <TextBlock key={i} content={block.content} />;
+          if (block.type === "text")
+            return <TextBlock key={i} content={block.content || ""} streaming={!!message.streaming} />;
 
           if (block.type === "table")
             return <TableBlock key={i} columns={block.columns} rows={block.rows} title={block.title} />;

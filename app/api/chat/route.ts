@@ -71,6 +71,10 @@ CHART SELECTION GUIDE:
 - Area: cumulative totals over time (e.g., cumulative lessons completed)
 - Gauge: single-number KPIs worth highlighting (class average, overall completion)
 
+TEXT FORMATTING IN text BLOCKS:
+- Use **bold** around key terms, student names, lesson titles, and important numbers
+- Use ==highlight== around critical insights, warnings, or findings that need the teacher's immediate attention (e.g. ==5 students scored below 50%==)
+
 RULES:
 - Always start with a text block providing context or summary
 - Use tables when showing student lists or detailed comparisons (max 15 rows for readability)
@@ -175,46 +179,35 @@ export async function POST(req: NextRequest) {
       { text: prompt },
     ];
 
-    const result = await chat.sendMessage(messageParts);
-    const text = result.response.text().trim();
+    // Stream the response token by token
+    const result = await chat.sendMessageStream(messageParts);
 
-    if (!text) {
-      return NextResponse.json({
-        blocks: [{ type: "text", content: "I wasn't able to generate a response for that question. Please try rephrasing or ask a more specific question about the class data." }],
-      });
-    }
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            if (chunkText) controller.enqueue(encoder.encode(chunkText));
+          }
+        } catch (e) {
+          const errMsg = e instanceof Error ? e.message : "Stream error";
+          controller.enqueue(encoder.encode(JSON.stringify({
+            blocks: [{ type: "text", content: `Error: ${errMsg}` }],
+          })));
+        } finally {
+          controller.close();
+        }
+      },
+    });
 
-    // Parse JSON response
-    let parsed;
-    try {
-      // Strip markdown code blocks if present
-      const clean = text.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
-      parsed = JSON.parse(clean);
-    } catch {
-      parsed = null;
-    }
-
-    // Accept either { blocks: [...] } or a bare [...] array of blocks
-    if (Array.isArray(parsed)) {
-      parsed = { blocks: parsed };
-    } else if (parsed && typeof parsed === "object" && !parsed.blocks) {
-      // Single block object { type: "...", ... } — wrap it
-      if (typeof parsed.type === "string") {
-        parsed = { blocks: [parsed] };
-      }
-    }
-
-    const hasValidBlocks =
-      parsed?.blocks &&
-      Array.isArray(parsed.blocks) &&
-      parsed.blocks.length > 0 &&
-      parsed.blocks.every((b: unknown) => b && typeof b === "object" && typeof (b as { type?: unknown }).type === "string");
-
-    if (!hasValidBlocks) {
-      parsed = { blocks: [{ type: "text", content: text || "No response generated." }] };
-    }
-
-    return NextResponse.json(parsed);
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
   } catch (error: unknown) {
     console.error("Chat API error:", error);
     const errMsg = error instanceof Error ? error.message : "Unknown error";
